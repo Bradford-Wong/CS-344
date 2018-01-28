@@ -103,7 +103,7 @@ add(){
 			echo "Incompatible matrices " >&2
 			exit 1
 		fi
-	
+
 	while read line1 <&3 && read line2 <&4
 	do
 		#line3="3 4 5 6 7"
@@ -159,7 +159,7 @@ transpose(){
 	done < $fileInput
 
 	j=$(($j / $i))
-	k=1	
+	k=1
 
 	while  [ $k -le $j ]
 	do
@@ -208,7 +208,7 @@ mean(){
 	done < $fileInput
 	j=$(($j / $i))
 	row=$j
-	k=1	
+	k=1
 
 	while  [ $k -le $j ]
 	do
@@ -217,8 +217,10 @@ mean(){
 	done < $fileInput
 	#cat myFile$$
 	numPasted=1
+#	echo "------------"
 	while read lineT
 	do
+	#	echo ${lineT[@]}
 		sum=0
 		count=0
 		lineLength=${#lineT[@]}
@@ -228,15 +230,18 @@ mean(){
 		#	set ${lineT[0]}
 			sum=$(($sum+$k))
 			((count++))
-			
+
 		done
-		sum=$(($sum / $count))
+		sum=$((($sum + ($i / 2) * ( ($sum>0)*2-1)) / $i))
+		#sum=$(($sum / $count))
 	#	echo "row: $row linelength $lineLength, numPasted $numPasted"
 		if [ $numPasted -lt $row ]
 		then
-			printf '%s'"$sum\t" >> mf$$
+		#	printf '%s'"$sum\t" >> mf$$
+			echo -n -e "$sum\t" >> mf$$
 		else
-			printf '%s'"$sum" >> mf$$
+			#printf '%s'"$sum" >> mf$$
+			echo -n "$sum" >> mf$$
 		fi
 		((numPasted++))
 		#for k in $lineT
@@ -245,7 +250,7 @@ mean(){
 	#	done
 	#	printf "$sum \t"
 	done < myFile$$
-	echo "" >> mf$$
+	echo >> mf$$
 #	echo ""
 	cat mf$$
 	rm mf$$
@@ -257,8 +262,7 @@ mean(){
 exit 0
 }
 
-
-##########old mean 
+##########old mean
 #	tempFileExist=0
 #	fileInput=$2
 #	if [[ ! -e $2 ]];
@@ -307,7 +311,7 @@ exit 0
 #		((ind++))
 #	done
 #	echo ""
-	
+
 #	if (( $tempFileExist > 0 ))
 #	then
 #		rm $destdir
@@ -403,14 +407,14 @@ multiply(){
 		#echo ${column1[@]}
 		#echo -e "${line2[0]}"
 		#set $line2
-		#name=$( awk '{ print $0 }' $file2 )	
+		#name=$( awk '{ print $0 }' $file2 )
 		#echo ${name[1]}
 #		((j++))
 	#done
 		#echo "From m1  ${arr[@]}"
 		#echo "From m2 ${arr2[@]}"
 	done 3<$2 4<$3
-	
+
 #	while read -a line2
 #	do
 #		echo -e "${line[0]}"
