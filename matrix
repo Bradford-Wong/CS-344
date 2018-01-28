@@ -1,0 +1,449 @@
+#!/bin/bash
+#test
+dims(){
+	if [[ "$#" = 2 &&  ! -e $2 ]];
+	then
+		echo "File doesn't exist." >&2
+		exit 1
+	fi
+	#echo "Dim $2"
+#	if (( "$#" > 2 ))
+#	then
+#		echo "Too many arguments for dims function " >&2
+#		exit 1
+#	fi
+	if (( "$#" >2 ))
+	then
+		echo "Too many arguments for dims " >&2
+		exit 1
+	fi
+	if [[ ! -r $2 ]]
+	then
+		value=$(cat)
+		#echo "$value"
+		destdir=dimsfile$$
+		echo "$value" > "$destdir"
+		local col=0
+		local row=0
+		while read myLine
+		do
+			col=0
+			for i in $myLine
+			do
+				(( col++))
+			done
+			(( row++ ))
+		done < $destdir
+
+		echo "$row $col"
+		rm $destdir
+	else
+		local col=0
+		local row=0
+		while read myLine
+		do
+			col=0
+			for i in $myLine
+			do
+				(( col++))
+			done
+			(( row++ ))
+		done < $2
+
+		echo "$row $col"
+	fi
+	exit 0
+}
+add(){
+#	echo "$2 $3"
+	tempFileExist=0
+	fileInput=$2
+	fileInput2=$3
+	if (( "$#" < 2 ))
+	then
+		echo "Not enough arguments for add function. " >&2
+		exit 1
+	fi
+	if [[ ! -e $2 ]];
+	then
+		value=$(cat)
+		destdir=meanFile$$
+		echo "$value" > "$destdir"
+		fileInput=$destdir
+		tempFileExist=1
+
+
+	#	cat $destdir
+	fi
+		col1=0
+		col2=0
+		row1=0
+		row2=0
+		while read myLine1
+		do
+			col=0
+			for i in $myLine1
+			do
+				(( col1++))
+			done
+			(( row1++ ))
+		done < $2
+		while read myLine2
+		do
+			col=0
+			for i in $myLine2
+			do
+				(( col2++))
+			done
+			(( row2++ ))
+		done < $3
+		if (( $col1 != $col2 || $row1 != $row2 ))
+		then
+		#	echo "Col1 $col1, Col2; $col2, row1: $row1, row2: $row "
+			echo "Incompatible matrices " >&2
+			exit 1
+		fi
+	
+	while read line1 <&3 && read line2 <&4
+	do
+		#line3="3 4 5 6 7"
+		#set ${line3[0]}
+		#num=$(($3+2))
+		#echo $num
+		for i in $line1
+		do
+##			set ${line1[0]}
+			num=$i
+		#	set ${line2[0]}
+			num=$(($num+$i))
+##			printf "$num \t"
+		done
+		echo ""
+	done 3<$2 4<$3 #$3 or 2 ?????????
+	if (( $tempFileExist > 0 ))
+	then
+		rm $destdir
+	fi
+	exit 0
+}
+
+transpose(){
+	tempFileExist=0
+	fileInput=$2
+	if [[ ! -e $2 ]];
+	then
+	#	echo "File doesn't exist." >&2
+	#	exit 1
+		value=$(cat)
+		#echo "$value"
+		destdir=transposefile$$
+		echo "$value" > "$destdir"
+		fileInput=$destdir
+		tempFileExist=1
+		#cat $fileInput
+	fi
+	if [[ ! -r $fileInput ]]
+	then
+		echo "File is not readable. " >&2
+		exit 1
+	fi
+	i=0
+	j=0
+	while read myLine
+	do
+		((i++))
+		for k in $myLine
+		do
+			((j++))
+		done
+	done < $fileInput
+
+	j=$(($j / $i))
+	k=1	
+
+	while  [ $k -le $j ]
+	do
+		cut -f$k $fileInput | paste -s >> myFile$$
+		((k++))
+	done < $fileInput
+	cat myFile$$
+	rm myFile$$
+	if (( $tempFileExist > 0 ))
+	then
+		rm $destdir
+	fi
+#	for i in $linedo
+	#	echo -e $line1 > $inputFile
+	#	cut -f $inputFile > $tempCol
+#	done
+exit 0
+}
+
+
+mean(){
+	tempFileExist=0
+	fileInput=$2
+	if [[ ! -e $2 ]];
+	then
+		value=$(cat)
+		destdir=transposefile$$
+		echo "$value" > "$destdir"
+		fileInput=$destdir
+		tempFileExist=1
+	fi
+	if [[ ! -r $fileInput ]]
+	then
+		echo "File is not readable. " >&2
+		exit 1
+	fi
+	i=0
+	j=0
+	while read myLine
+	do
+		((i++))
+		for k in $myLine
+		do
+			((j++))
+		done
+	done < $fileInput
+	j=$(($j / $i))
+	row=$j
+	k=1	
+
+	while  [ $k -le $j ]
+	do
+		cut -f$k $fileInput | paste -s >> myFile$$
+		((k++))
+	done < $fileInput
+	#cat myFile$$
+	numPasted=1
+	while read lineT
+	do
+		sum=0
+		count=0
+		lineLength=${#lineT[@]}
+		for k in $lineT
+		do
+		#	echo "element: $k"
+		#	set ${lineT[0]}
+			sum=$(($sum+$k))
+			((count++))
+			
+		done
+		sum=$(($sum / $count))
+	#	echo "row: $row linelength $lineLength, numPasted $numPasted"
+		if [ $numPasted -lt $row ]
+		then
+			printf '%s'"$sum\t" >> mf$$
+		else
+			printf '%s'"$sum" >> mf$$
+		fi
+		((numPasted++))
+		#for k in $lineT
+		#do
+	#		echo ${lineT[$k]}
+	#	done
+	#	printf "$sum \t"
+	done < myFile$$
+	echo "" >> mf$$
+#	echo ""
+	cat mf$$
+	rm mf$$
+	rm myFile$$
+	if (( $tempFileExist > 0 ))
+	then
+		rm $destdir
+	fi
+exit 0
+}
+
+
+##########old mean 
+#	tempFileExist=0
+#	fileInput=$2
+#	if [[ ! -e $2 ]];
+#	then
+#		value=$(cat)
+#		destdir=meanFile$$
+#		echo "$value" > "$destdir"
+#		fileInput=$destdir
+#		tempFileExist=1
+#	fi
+
+#	line1=$(head -n 1 $fileInput)
+#	col=0
+#	for i in $line1
+#	do
+#		arr[$i]=0
+#		(( col++ ))
+#	done
+#	echo "Number of cols $col "
+#	currentLine=0
+#	while read line
+#	do
+	#	echo $line
+#		for i in $line
+#		do
+#			numToSub=$((currentLine * col))
+#			index=$(expr $i - $numToSub)
+#			set ${line[0]}
+#			num=$i
+		#	echo "Index is $index"
+#			arr[$i]=$((arr[$i]+$num))
+#		done
+#		(( currentLine++ ))
+#	done < $fileInput
+#	echo ${arr[@]}
+#	ind=0
+#	(IFS=\t; echo "${arr[@]}")
+#	for j in "${arr[@]}"
+#	do
+#		printf "$((j / currentLine))" > tempOut$$
+		#echo "j is $j "
+#		if [ $ind -lt $col ]
+#		then
+#			printf " \t " > tempOut$$
+#		fi
+#		((ind++))
+#	done
+#	echo ""
+	
+#	if (( $tempFileExist > 0 ))
+#	then
+#		rm $destdir
+#	fi
+#	while read line
+#	do
+#		for i in $line
+#		do
+#			set ${line[0]}
+#			num=$i
+#			set $arr{0}
+#			arr+=($num)
+#			echo "I is $i"
+#			echo $arr[i]
+#		done
+#
+#	done < $2
+#	echo $arr
+
+
+
+multiply(){
+	file2=$3
+	row=0
+	firstLine=$(head -n 1 $2)
+	col=0
+	for i in $firstLine
+	do
+		(( col++ ))
+	done
+	newColLength=0
+	currentNewCol=0
+	headFile2=$(head -n 1 $3)
+	for i in $headFile2
+	do
+		(( newColLength++ ))
+	done
+	while read line1 <&3 && read -a line2 <&4
+	do
+		#take each line  in first file
+		for i in $line1
+		do
+			numToSub=$((col*row))
+			index=$(expr $i - $numToSub)
+			set $line1[0]
+			arr[$index]=$i
+		done
+		((row++))
+
+		#get col in m2
+		index2=0
+		#echo "right before second file loop"
+		#while read -a line2
+	#	do
+			#echo "inside loop"
+		#	arr2[$index2]=$line2[0]
+	#		((index2++))
+	#	done < $3
+	j=0
+	currentCol=1
+	currentNewCol=0
+	while [ $currentCol -lt $col ]
+	do
+		array2=($(cut -f $currentCol  $file2| tr "\t" "\n")) #now have entire column in the array
+		((currentCol++))
+		#now do multiplication
+		sum=0
+		iterate=1
+	#	echo ${array2[@]}
+		#echo "CurrentneCol $currentNewCol, newColLength $newColLength"
+		while [ $iterate -lt $((col+1)) ]
+		do
+				num1=( ${arr[$iterate]} )
+				num2=( ${array2[$((iterate-1))]} )
+				num3=$((num1*num2))
+				sum=$((num3+sum))
+				#iecho "Multiplying $num1 and $num2 = $num3. Sum = $sum"
+				((iterate++))
+		done
+		((currentNewCol++))
+		if [ $currentNewCol -le $newColLength ]
+		then
+		printf "$sum  \t"
+		fi
+	done
+	echo ""
+	##echo ${array2[@]}
+#	while [ $j -lt  $col ]
+	#do
+#		set $line2[0]
+#		arr2[$j]=$line2[0]
+		#echo $row
+		#echo ${column1[@]}
+		#echo -e "${line2[0]}"
+		#set $line2
+		#name=$( awk '{ print $0 }' $file2 )	
+		#echo ${name[1]}
+#		((j++))
+	#done
+		#echo "From m1  ${arr[@]}"
+		#echo "From m2 ${arr2[@]}"
+	done 3<$2 4<$3
+	
+#	while read -a line2
+#	do
+#		echo -e "${line[0]}"
+#	done < $3
+exit 0
+}
+
+
+if [ $1 = "dims" ]
+then
+	dims $1 $2 $3
+fi
+#	dims "#{@:2}"
+if [ $1 = "add" ]
+then
+	add $1 $2 $3
+fi
+
+if [ $1 = "mean" ]
+then
+	mean $1 $2
+fi
+
+if [ $1 = "transpose" ]
+then
+	transpose $1 $2
+fi
+
+if [ $1 = "multiply" ]
+then
+	echo ""
+	#multiply $1 $2 $3
+fi
+
+#echo "Bad command. " >&2
+#exit 1
